@@ -23,6 +23,7 @@
 """Experiment class file."""
 
 from tsp.trace_set import TraceSet
+from tsp.indexing_status import IndexingStatus
 
 NA = "N/A"
 UUID_KEY = "UUID"
@@ -86,11 +87,16 @@ class Experiment:
         # Indicate if the indexing of the experiment is completed or still running.
         # If it still running, the end time and number of events are not final
         if INDEXING_STATUS_KEY in params:
-            self.indexin_status = params.get(INDEXING_STATUS_KEY)
+            self.indexing_status = IndexingStatus[params.get(INDEXING_STATUS_KEY)]
             del params[INDEXING_STATUS_KEY]
         else:  # pragma: no cover
-            self.indexin_status = 0
+            self.indexing_status = 0
 
         # Array of all the traces contained in the experiment
         if TRACES_TIME_KEY in params:
             self.traces = TraceSet(params.get(TRACES_TIME_KEY))
+
+    def __repr__(self):
+        return 'Experiment({}: UUID={}, start={}, end={}, nevent={}, traces={}, indexing={})'.format(
+            self.name, self.UUID, self.start, self.end, self.number_of_events, self.traces, self.indexing_status
+        )

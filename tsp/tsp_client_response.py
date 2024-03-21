@@ -22,6 +22,11 @@
 
 """TspClientResponse class file."""
 
+import json
+from tsp.response import GenericResponse, GenericResponseEncoder
+from tsp.output_descriptor_set import OutputDescriptorSet
+from tsp.output_descriptor import OutputDescriptorEncoder
+
 MODEL_KEY = "model"
 OUTPUT_DESCRIPTOR_KEY = "output"
 RESPONSE_STATUS_KEY = "status"
@@ -34,7 +39,7 @@ class TspClientResponse:
     Class that for providing the tsp
     '''
 
-    def __init__(self, model, status, status_text):
+    def __init__(self, model, status, status_message, size=None):
         '''
         Constructor
         '''
@@ -43,7 +48,40 @@ class TspClientResponse:
         self.model = model
 
         # The HTTP status code
-        self.status_code = status
+        self.status = status
 
         # The status message
-        self.status_text = status_text
+        self.status_message = status_message
+
+        self.size = size
+    
+    def is_ok(self):
+        return self.status >= 200 and self.status < 400
+    
+    def __repr__(self):
+        return 'TspClientResponse ({}, {}, {})'.format(self.status, self.status_message, self.model)
+
+class TspClientResponseEncoder(json.JSONEncoder):
+    
+    def default(self, obj):
+        if isinstance(obj, TspClientResponse):
+            # Convert TspClientResponse to a dictionary
+            if isinstance(obj.model, GenericResponse):
+                return {
+                    'model': GenericResponseEncoder().default(obj.model),
+                    RESPONSE_STATUS_KEY : obj.status,
+                    STATUS_MESSAGE_KEY: obj.status_message
+                }
+            elif isinstance(obj.model, OutputDescriptorSet):
+                return {
+                    'model': [OutputDescriptorEncoder().default(output_descriptor) for output_descriptor in obj.model.descriptors],
+                    RESPONSE_STATUS_KEY: obj.status,
+                    STATUS_MESSAGE_KEY: obj.status_message
+                }
+            else:
+                return {
+                    'model': obj.model,
+                    RESPONSE_STATUS_KEY: obj.status,
+                    STATUS_MESSAGE_KEY: obj.status_message
+                }
+        return super().default(obj)
